@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fuey500 Developer Log</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Oswald:wght@400;700&display=swap');
+        
+        :root {
+            --tf-red: #b8383b;
+            --tf-blu: #5885a2;
+            --tf-orange: #ef6e14;
+            --tf-tan: #e1d8be;
+            --tf-dark: #2b2622;
+            --tf-black: #1a1714;
+        }
+
+        body {
+            background-color: var(--tf-dark);
+            background-image: url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
+            color: var(--tf-tan);
+            font-family: 'Oswald', sans-serif;
+            overflow-x: hidden;
+            transition: padding-right 0.3s ease;
+        }
+
+        /* Shift content and nav when admin panel is open */
+        body.admin-active {
+            padding-right: 450px;
+        }
+
+        nav {
+            transition: right 0.3s ease;
+            right: 0;
+        }
+
+        body.admin-active nav {
+            right: 450px;
+        }
+
+        /* TF2 Typography */
+        .tf-font { text-transform: uppercase; font-weight: 700; font-style: italic; letter-spacing: -1px; }
+        .comic-font { font-family: 'Bangers', cursive; letter-spacing: 1px; }
+
+        .tf-skew { transform: skew(-12deg); }
+        .tf-skew-rev { transform: skew(12deg); }
+
+        /* Industrial UI */
+        .mann-co-border {
+            border: 4px solid var(--tf-black);
+            box-shadow: 8px 8px 0px rgba(0,0,0,0.4);
+        }
+
+        .blueprint-card {
+            background-color: #1e3a8a;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+            border: 2px solid #3b82f6;
+        }
+
+        /* Navigation */
+        .nav-btn {
+            background: #3c352e;
+            color: white;
+            transition: all 0.15s ease-in-out;
+            border-bottom: 4px solid #25211e;
+        }
+        .nav-btn:hover { background: #4d443b; transform: translateY(-2px); }
+        .nav-btn.active {
+            background: var(--tf-orange);
+            border-bottom-color: #a34b0d;
+            color: white;
+        }
+
+        /* Admin Controls */
+        .admin-controls {
+            display: none;
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 50;
+            gap: 8px;
+        }
+        body.admin-active .admin-controls { display: flex; }
+        
+        .admin-btn {
+            background: var(--tf-black);
+            color: white;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #4d433b;
+            cursor: pointer;
+            box-shadow: 4px 4px 0px rgba(0,0,0,0.5);
+        }
+        .admin-btn:hover { background: var(--tf-orange); border-color: white; transform: scale(1.1); }
+        .admin-btn.delete:hover { background: var(--tf-red); }
+
+        /* Sidebar Panel */
+        #adminPanel {
+            display: none;
+            position: fixed;
+            top: 0; right: 0; bottom: 0;
+            width: 450px;
+            background: var(--tf-black);
+            z-index: 1000;
+            border-left: 6px solid var(--tf-orange);
+            padding: 1.5rem;
+            box-shadow: -20px 0 50px rgba(0,0,0,0.8);
+            font-family: sans-serif;
+            overflow-y: auto;
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .video-thumb {
+            position: relative;
+            aspect-ratio: 16/9;
+            background: #000;
+            overflow: hidden;
+            border: 2px solid #4d433b;
+        }
+
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: var(--tf-black); }
+        ::-webkit-scrollbar-thumb { background: var(--tf-orange); border: 2px solid var(--tf-black); }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <!-- Top Bar -->
+    <nav class="fixed top-0 z-40 bg-[#3c352e] border-b-4 border-black w-full">
+        <div class="container mx-auto px-4 flex justify-between items-center h-16">
+            <div class="flex items-center gap-4">
+                <!-- Overhauled Logo -->
+                <div class="tf-skew bg-gradient-to-b from-white to-slate-300 px-5 py-1 border-[3px] border-black shadow-[4px_4px_0px_rgba(0,0,0,0.5)]">
+                    <span class="tf-skew-rev tf-font text-black text-2xl tracking-tighter">FUEY500</span>
+                </div>
+                <div class="tf-font text-orange-500 text-lg hidden md:block opacity-80">DEVELOPER_LOG_v4.0</div>
+            </div>
+            
+            <div class="flex h-full">
+                <button class="nav-btn active px-8 h-full tf-font italic" data-target="logs">Service Logs</button>
+                <button class="nav-btn px-8 h-full tf-font italic" data-target="videos">Combat Intel</button>
+                <button class="nav-btn px-8 h-full tf-font italic" data-target="comics">Classified Strips</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <header class="pt-32 pb-12 text-center relative overflow-hidden">
+        <div class="container mx-auto px-6 relative z-10">
+            <div class="inline-block bg-orange-600 text-white tf-font px-4 py-1 mb-4 shadow-lg italic">PROPERTY OF RED TEAM</div>
+            <h2 class="text-6xl md:text-8xl tf-font italic text-white drop-shadow-[4px_4px_0px_rgba(239,110,20,1)]">FUEY500 DEV LOGS</h2>
+            <p class="tf-font text-slate-400 tracking-widest mt-2 uppercase">Development Status: Battle Ready</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-6 pb-24" id="contentWrapper">
+        <section id="logs" class="tab-content active max-w-4xl mx-auto space-y-10"></section>
+        <section id="videos" class="tab-content">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10" id="videoGrid"></div>
+        </section>
+        <section id="comics" class="tab-content">
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8" id="comicGrid"></div>
+        </section>
+    </main>
+
+    <!-- MISSION COMMAND -->
+    <div id="adminPanel">
+        <div class="flex justify-between items-center mb-6 border-b-2 border-slate-700 pb-4">
+            <div>
+                <h3 class="tf-font text-3xl text-orange-500 italic leading-none">Mission Command</h3>
+                <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest mt-1">Status: FUEY500 Override</p>
+            </div>
+            <button onclick="toggleAdmin()" class="text-slate-500 text-3xl hover:text-white">&times;</button>
+        </div>
+        
+        <div class="space-y-6">
+            <div class="bg-[#2a2521] p-5 mann-co-border">
+                <p class="tf-font text-sm text-orange-400 mb-4 tracking-widest uppercase italic" id="formActionLabel">NEW INTEL DEPLOYMENT</p>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Asset Type</label>
+                        <select id="entryType" class="w-full bg-black border border-slate-700 p-2 text-white text-sm focus:border-orange-500 outline-none">
+                            <option value="logs">Service Log</option>
+                            <option value="videos">Combat Clip</option>
+                            <option value="comics">Classified Strip</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Subject Headline</label>
+                        <input id="entryTitle" type="text" class="w-full bg-black border border-slate-700 p-2 text-white text-sm focus:border-orange-500 outline-none">
+                    </div>
+
+                    <div id="logSpecificFields" class="space-y-4">
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Image Path (images/...)</label>
+                            <input id="entryImage" type="text" class="w-full bg-black border border-slate-700 p-2 text-white text-sm focus:border-orange-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Field Report</label>
+                            <textarea id="entryContent" class="w-full bg-black border border-slate-700 p-2 h-24 text-white text-sm focus:border-orange-500 outline-none"></textarea>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Technical Blueprint</label>
+                            <textarea id="entryBlueprint" class="w-full bg-black border border-slate-700 p-2 h-20 text-blue-300 font-mono text-xs focus:border-blue-500 outline-none"></textarea>
+                        </div>
+                    </div>
+
+                    <div id="videoSpecificFields" class="hidden space-y-4">
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Intelligence Description</label>
+                            <textarea id="entryDesc" class="w-full bg-black border border-slate-700 p-2 h-20 text-white text-sm focus:border-orange-500 outline-none"></textarea>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Video File (videos/...)</label>
+                            <input id="entryUrl" type="text" class="w-full bg-black border border-slate-700 p-2 text-white text-sm focus:border-orange-500 outline-none">
+                        </div>
+                    </div>
+
+                    <div id="comicSpecificFields" class="hidden space-y-4">
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Strip Path (comics/...)</label>
+                            <input id="entryComicUrl" type="text" class="w-full bg-black border border-slate-700 p-2 text-white text-sm focus:border-orange-500 outline-none">
+                        </div>
+                    </div>
+
+                    <div class="pt-4 flex gap-2">
+                        <button id="saveBtn" onclick="saveEntry()" class="flex-1 bg-orange-600 hover:bg-orange-700 text-white tf-font py-3 text-lg italic shadow-[4px_4px_0px_#000]">EXECUTE COMMAND</button>
+                        <button id="cancelBtn" onclick="resetForm()" class="hidden bg-slate-700 text-white tf-font px-4 py-3 italic shadow-[4px_4px_0px_#000]">CANCEL</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-4 border-t border-slate-800">
+                <p class="tf-font text-xs text-slate-500 mb-2 italic">MASTER ARCHIVE DATA (COMMIT REQUIRED)</p>
+                <textarea id="jsonOutput" readonly class="w-full bg-black text-green-500 font-mono text-[9px] p-3 h-48 border border-slate-800 focus:outline-none"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lightbox -->
+    <div id="comicModal" class="fixed inset-0 z-50 bg-black/95 hidden items-center justify-center p-6" onclick="closeComic()">
+        <div class="max-w-4xl w-full flex flex-col items-center">
+            <div class="bg-[#e1d8be] p-4 shadow-2xl mann-co-border" onclick="event.stopPropagation()">
+                <h2 id="modalTitle" class="tf-font text-2xl mb-4 text-black italic text-center border-b-2 border-black pb-2 uppercase tracking-tighter">CLASSIFIED: FUEY500</h2>
+                <img id="modalImg" src="" class="max-h-[75vh]">
+            </div>
+            <p class="mt-4 tf-font text-slate-500 italic uppercase">Click to dismiss intel</p>
+        </div>
+    </div>
+
+    <script>
+        let siteData = {
+            logs: [
+                {
+                    id: 1,
+                    serial: "F5-001",
+                    title: "Tactical UI Deployment",
+                    date: "March 13, 2024",
+                    image: "https://via.placeholder.com/800x400?text=Fuey500+Tactical+Display",
+                    text: "Brand new tactical interface deployed. All MERC assets have been transitioned to the FUEY500 command structure. Flat UI elements have been scrapped in favor of high-impact industrial materials.",
+                    blueprint: "if (branding === 'flat') { \n  apply(INDUSTRIAL_STRENGTH); \n  setLabel('FUEY500'); \n}"
+                }
+            ],
+            videos: [
+                {
+                    id: 1,
+                    title: "Classified Combat Intel",
+                    desc: "Combat footage of prototype weapons testing.",
+                    url: "" 
+                }
+            ],
+            comics: [
+                { id: 1, title: "The Sapper Incident", img: "https://via.placeholder.com/400x500?text=FUEY500+CLASSIFIED" }
+            ]
+        };
+
+        let editingId = null;
+        let editingType = null;
+
+        $(document).ready(function() {
+            renderAll();
+
+            $('.nav-btn').on('click', function() {
+                $('.nav-btn').removeClass('active');
+                $(this).addClass('active');
+                $('.tab-content').hide();
+                $('#' + $(this).data('target')).fadeIn(250);
+            });
+
+            $('#entryType').on('change', function() {
+                const val = $(this).val();
+                $('#logSpecificFields, #videoSpecificFields, #comicSpecificFields').addClass('hidden');
+                if (val === 'logs') $('#logSpecificFields').removeClass('hidden');
+                else if (val === 'videos') $('#videoSpecificFields').removeClass('hidden');
+                else if (val === 'comics') $('#comicSpecificFields').removeClass('hidden');
+            });
+
+            $(document).keydown(function(e) {
+                if (e.ctrlKey && e.key === 'm') toggleAdmin();
+            });
+            
+            updateJSONOutput();
+        });
+
+        function renderAll() {
+            renderLogs();
+            renderVideos();
+            renderComics();
+            updateJSONOutput();
+        }
+
+        function renderLogs() {
+            const container = $('#logs').empty();
+            siteData.logs.forEach((log) => {
+                container.append(`
+                    <article class="bg-[#332c26] mann-co-border relative overflow-hidden group">
+                        <div class="admin-controls">
+                            <button class="admin-btn" onclick="editEntry('logs', ${log.id})"><i class="fa-solid fa-pen"></i></button>
+                            <button class="admin-btn delete" onclick="deleteEntry('logs', ${log.id})"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                        <div class="p-8">
+                            <div class="flex items-center gap-4 mb-4">
+                                <div class="bg-orange-600 text-white tf-font px-3 py-1 shadow-md">SN: ${log.serial}</div>
+                                <div class="tf-font text-rose-500 tracking-widest">${log.date}</div>
+                            </div>
+                            <h3 class="tf-font text-4xl text-white italic mb-6 border-l-8 border-orange-600 pl-4">${log.title}</h3>
+                            ${log.image ? `<div class="mb-6 mann-co-border p-2 bg-black/20"><img src="${log.image}" class="w-full h-auto grayscale hover:grayscale-0 transition-all"></div>` : ''}
+                            <p class="text-slate-300 text-lg leading-relaxed mb-6">${log.text}</p>
+                            ${log.blueprint ? `<div class="blueprint-card p-5 rounded font-mono text-sm text-blue-100"><div class="text-blue-400 mb-2 border-b border-blue-400/30 pb-1 tf-font italic">Technical Dossier:</div><pre class="whitespace-pre-wrap">${log.blueprint}</pre></div>` : ''}
+                        </div>
+                    </article>
+                `);
+            });
+        }
+
+        function renderVideos() {
+            const container = $('#videoGrid').empty();
+            siteData.videos.forEach(v => {
+                const isLocal = v.url && (v.url.endsWith('.mp4') || v.url.endsWith('.webm'));
+                container.append(`
+                    <div class="mann-co-border bg-[#332c26] overflow-hidden group relative">
+                        <div class="admin-controls">
+                            <button class="admin-btn" onclick="editEntry('videos', ${v.id})"><i class="fa-solid fa-pen"></i></button>
+                            <button class="admin-btn delete" onclick="deleteEntry('videos', ${v.id})"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                        <div class="video-thumb bg-black">
+                            ${isLocal ? `<video controls class="w-full h-full object-cover"><source src="${v.url}" type="video/mp4"></video>` : `<div class="absolute inset-0 flex items-center justify-center text-slate-700 italic uppercase">No Combat Intel Found</div>`}
+                        </div>
+                        <div class="p-6 border-t-4 border-black bg-[#2b2622]">
+                            <h4 class="tf-font text-2xl text-white mb-1 italic tracking-tighter">${v.title}</h4>
+                            <p class="text-slate-400 italic">${v.desc}</p>
+                        </div>
+                    </div>
+                `);
+            });
+        }
+
+        function renderComics() {
+            const container = $('#comicGrid').empty();
+            siteData.comics.forEach(c => {
+                container.append(`
+                    <div class="mann-co-border bg-[#e1d8be] p-2 cursor-pointer group hover:-rotate-1 transition-transform relative" onclick="openComic('${c.title}', '${c.img}')">
+                        <div class="admin-controls" onclick="event.stopPropagation()">
+                            <button class="admin-btn" onclick="editEntry('comics', ${c.id})"><i class="fa-solid fa-pen"></i></button>
+                            <button class="admin-btn delete" onclick="deleteEntry('comics', ${c.id})"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                        <div class="relative overflow-hidden bg-black"><img src="${c.img}" class="w-full h-auto opacity-90 group-hover:opacity-100 transition-opacity"></div>
+                        <div class="mt-3 text-black text-center border-t-2 border-black pt-2"><p class="tf-font text-sm italic uppercase tracking-tighter">${c.title}</p></div>
+                    </div>
+                `);
+            });
+        }
+
+        function deleteEntry(type, id) {
+            if(confirm("Confirm deletion of this Mission Intel?")) {
+                siteData[type] = siteData[type].filter(item => item.id !== id);
+                renderAll();
+            }
+        }
+
+        function editEntry(type, id) {
+            const item = siteData[type].find(item => item.id === id);
+            if (!item) return;
+            editingId = id; editingType = type;
+            $('#entryType').val(type).trigger('change');
+            $('#entryTitle').val(item.title);
+            if (type === 'logs') { $('#entryContent').val(item.text); $('#entryBlueprint').val(item.blueprint || ''); $('#entryImage').val(item.image || ''); }
+            else if (type === 'videos') { $('#entryDesc').val(item.desc); $('#entryUrl').val(item.url); }
+            else if (type === 'comics') { $('#entryComicUrl').val(item.img); }
+            $('#formActionLabel').text('UPDATING CLASSIFIED INTEL');
+            $('#saveBtn').text('UPDATE RECORD');
+            $('#cancelBtn').removeClass('hidden');
+            $('#adminPanel').scrollTop(0);
+        }
+
+        function saveEntry() {
+            const type = $('#entryType').val(); const title = $('#entryTitle').val();
+            if (!title) return;
+            let newEntry = { id: editingId || Date.now(), title };
+            if (type === 'logs') {
+                newEntry.text = $('#entryContent').val(); newEntry.blueprint = $('#entryBlueprint').val(); newEntry.image = $('#entryImage').val();
+                newEntry.serial = editingId ? siteData.logs.find(x => x.id === editingId).serial : "F5-" + Math.floor(100 + Math.random() * 900);
+                newEntry.date = editingId ? siteData.logs.find(x => x.id === editingId).date : new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+            } else if (type === 'videos') { newEntry.desc = $('#entryDesc').val(); newEntry.url = $('#entryUrl').val(); }
+            else if (type === 'comics') { newEntry.img = $('#entryComicUrl').val(); }
+            if (editingId) { siteData[editingType][siteData[editingType].findIndex(x => x.id === editingId)] = newEntry; }
+            else { siteData[type].unshift(newEntry); }
+            resetForm(); renderAll();
+        }
+
+        function resetForm() {
+            editingId = null; editingType = null;
+            $('#entryTitle, #entryContent, #entryBlueprint, #entryImage, #entryDesc, #entryUrl, #entryComicUrl').val('');
+            $('#formActionLabel').text('NEW INTEL DEPLOYMENT');
+            $('#saveBtn').text('EXECUTE COMMAND');
+            $('#cancelBtn').addClass('hidden');
+        }
+
+        function toggleAdmin() {
+            $('#adminPanel').animate({ width: 'toggle' }, 300);
+            $('body').toggleClass('admin-active');
+            updateJSONOutput();
+        }
+
+        function updateJSONOutput() {
+            $('#jsonOutput').val('let siteData = ' + JSON.stringify(siteData, null, 4) + ';');
+        }
+
+        function openComic(title, src) {
+            $('#modalTitle').text(title); $('#modalImg').attr('src', src);
+            $('#comicModal').css('display', 'flex').hide().fadeIn(200);
+            $('body').addClass('overflow-hidden');
+        }
+
+        function closeComic() {
+            $('#comicModal').fadeOut(200); $('body').removeClass('overflow-hidden');
+        }
+    </script>
+</body>
+</html>
