@@ -9,8 +9,8 @@ yarn for them, see each cat's age; cats that have passed wear a halo and show th
 
 ## State (2026-11-25)
 
-- Branch `claude/project-thread-ucqvs7`, PR #1 open against `main`. Not merged: `main` is what GitHub
-  Pages serves at fuey500.com, so merging is Chance's call.
+- PR #1 merged to `main` on 2026-11-25 on Chance's yes; GitHub Pages serves `main` at fuey500.com.
+  Ask Chance before merging future Fuey500 work.
 - 8 cats in `siteData.cats`: Shadow ~13, Piccolo (passed, lived ~2-3), Kael'thas ~2, Booster ~8 (note
   "Mom's cat"), Mischief ~3, Sticks ~1 and Stone ~1 (siblings, `buddy`), Jinx (passed, lived ~8, note
   "Brother's cat"). Chance's rule: no family members' names anywhere on the site. RIP dates unknown.
@@ -50,4 +50,3 @@ yarn for them, see each cat's age; cats that have passed wear a halo and show th
 2. Chance makes `.glb` models (see PLAN.md "Model drop-in"); set each cat's `model`.
 3. Check on a real phone. Note the site's nav is `hidden md:flex`, so no tab (Cats included) is
    reachable on phones today; a mobile nav is a separate change.
-4. Merge the PR to `main` when Chance says yes.
