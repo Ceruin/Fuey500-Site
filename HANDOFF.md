@@ -16,7 +16,8 @@ yarn for them, see each cat's age; cats that have passed wear a halo and show th
   "Brother's cat"). Chance's rule: no family members' names anywhere on the site. RIP dates unknown.
 - Cats are procedural low-poly models (`cats/catmodel.js`, ~680 tris each) with coats matched to
   Chance's photos, posing stand/walk/chase/sit/lie; petting makes a cat sit and purr.
-- Photos are in `cats/photos/` (900px JPEGs, metadata stripped); a roster card click opens a popup.
+- Photos are in `cats/photos/` (900px max JPEGs, metadata stripped); a roster card click opens a popup.
+  Sticks' photo was replaced with the one Chance picked on 2026-11-25 (old one removed); the model colours already matched.
 - Preview page (Claude artifact) is built from the repo by a scratch script that inlines
   `catmodel.js` + `playground.js` and the cat data; photos are published beside it.
 - Tested in headless Chrome (SwiftShader) with CDN scripts served locally: 146 draw calls / ~6.9k
