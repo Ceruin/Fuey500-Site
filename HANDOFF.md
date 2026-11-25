@@ -9,11 +9,14 @@ yarn for them, see each cat's age; cats that have passed wear a halo and show th
 
 ## State (2026-11-25)
 
-- Branch `claude/project-thread-ucqvs7`, PR open against `main`. Not merged: `main` is what GitHub
+- Branch `claude/project-thread-ucqvs7`, PR #1 open against `main`. Not merged: `main` is what GitHub
   Pages serves at fuey500.com, so merging is Chance's call.
-- First playable version works with 4 placeholder cats ("Stand-in ..." names, made-up dates).
-- Tested in headless Chrome (SwiftShader) with the CDN scripts served locally: tab opens, 57 draw
-  calls / ~1.4k tris, petting shows hearts + info card + roster highlight, yarn toss makes cats
+- Chance's 8 cats are in (`siteData.cats`): Shadow ~13, Piccolo (passed, lived ~2-3), Kael'thas ~2,
+  Booster ~8 (Chance's mom's cat), Mischief ~3, Sticks ~1 and Stone ~1 (siblings, `buddy` keeps them near
+  each other), Jinx (passed, lived ~8). Ages are approximate birth years; the two RIP dates are unknown.
+  Stand-in coats were matched to Chance's photos (the photos are not in the repo).
+- Tested in headless Chrome (SwiftShader) with the CDN scripts served locally: 160 draw calls /
+  ~2.8k tris with 8 cats, petting shows hearts + info card + roster highlight, yarn toss makes cats
   chase and bat it, cats lose interest after ~6 bats, loop stops when leaving the tab and resumes,
   Blog tab unchanged, roster ages correct. Not tested on a real phone or on the live CDN URLs.
 
@@ -32,11 +35,12 @@ yarn for them, see each cat's age; cats that have passed wear a halo and show th
 - Cat data sits in `siteData.cats` so the admin panel's JSON dump includes it.
 - `passed: null` = alive, `"YYYY-MM-DD"` = RIP date, `""` = passed, date unknown. `born: null` shows "Age unknown".
 - Deceased cats keep playing, float a little, wear a gold halo.
+- Stand-in markings are a few extra boxes per cat from `coat`, no textures.
 - Phones: pixel ratio cap 1.5, no shadow maps (blob decals), tags show the name only under 640px.
 
 ## Next steps
 
-1. Chance gives real names, birth dates, RIP dates and fur colours; replace the stand-ins in `siteData.cats`.
+1. Optional: exact birth dates and RIP dates for Piccolo and Jinx, if Chance has them.
 2. Chance makes `.glb` models (see PLAN.md "Model drop-in"); set each cat's `model`.
 3. Check on a real phone. Note the site's nav is `hidden md:flex`, so no tab (Cats included) is
    reachable on phones today; a mobile nav is a separate change.

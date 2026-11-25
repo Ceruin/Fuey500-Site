@@ -15,15 +15,18 @@ passed wear a halo and show their RIP date.
 - **Lazy.** three.js and the scene load only the first time the Cats tab opens, so the blog pays
   nothing. The render loop stops when the tab or browser tab is hidden.
 - **Data lives in `siteData.cats`**, next to logs/videos/comics, so the admin panel's JSON dump
-  (Ctrl+M) includes it. One entry per cat:
-  `{ "name", "born": "YYYY-MM-DD", "passed": "YYYY-MM-DD" | null, "color": "#hex", "model": "file.glb" | null }`.
-  `born`/`passed` may also be `null` when unknown. `model` is a file in `cats/models/`.
-- **Stand-in cats until real models exist.** A cat with `model: null` is built from boxes and
-  cones (about 150 tris) in its `color`. A `.glb` drops in with no code change.
+  (Ctrl+M) includes it. One entry per cat: `name`; `born` as `"YYYY-MM-DD"` or `"YYYY"` (approximate,
+  shown as "~N yrs"); `passed` as `null` (alive), `"YYYY-MM-DD"`, or `""` (date unknown); `lived` (age at
+  passing when there are no dates); optional `note` and `buddy` (a cat it likes to stay near);
+  `coat`; `model` (a file in `cats/models/` or `null`). The format is commented above the array.
+- **Stand-in cats until real models exist.** A cat with `model: null` is built from boxes (about
+  300 tris) painted from its `coat`: `base`, `points` (siamese ears/mask/legs/tail), `patch` (back
+  saddle plus forehead blaze, or half face with `face: "half"`), `stripes`, `white` (chest, muzzle,
+  paws), `eyes`, `long` (fluffier). A `.glb` drops in with no code change.
 - **Behaviour is a tiny state machine per cat:** idle, wander, chase the yarn, being petted.
   Deceased cats do the same, with a halo and a slow float.
 - **Phones:** pixel ratio capped at 1.5, flat Lambert materials, no shadow maps (a blob decal
-  under each cat), a few dozen draw calls. Touch drag orbits only inside the canvas.
+  under each cat), about 160 draw calls with 8 cats. Touch drag orbits only inside the canvas.
 
 ## Model drop-in (for Chance)
 
@@ -46,7 +49,7 @@ passed wear a halo and show their RIP date.
    grass tosses yarn and cats chase it. **Done.**
 4. **Roster** (Sonnet): cards under the scene with name, age, born, RIP; tapping one pets that
    cat. Check: ages match the dates. **Done.**
-5. **Real cats** (Chance): names, birth dates, RIP dates, colours, then models. Open.
+5. **Real cats** (Chance): 8 cats in with approximate ages and coats from photos (2026-11-25). Open: exact dates, RIP dates, models.
 6. **Later ideas** (not built): admin-panel form for cats, cats remembering pets per visitor,
    sleeping at night by the visitor's clock, mobile nav for all tabs (the site's nav is
    desktop-only today).

@@ -21,14 +21,18 @@ export function ageText(born, until) {
     return [part(Math.floor(months / 12), 'yr'), part(months % 12, 'mo')].filter(Boolean).join(' ');
 }
 
+// born: "YYYY-MM-DD" (exact) or "YYYY" (approximate, shown as ~N yrs). lived: age at passing when dates are unknown.
 function describe(data) {
-    const born = parseDay(data.born), passed = parseDay(data.passed), ghost = data.passed != null && data.passed !== false;
-    const age = born ? ageText(born, passed ?? new Date()) : null;
+    const ghost = data.passed != null && data.passed !== false, approx = /^\d{4}$/.test(data.born ?? '');
+    const born = parseDay(approx ? null : data.born), passed = parseDay(data.passed), until = passed ?? new Date();
+    const years = until.getFullYear() - +data.born;
+    const age = approx ? `~${years} yr${years === 1 ? '' : 's'}` : born ? ageText(born, until) : ghost && data.lived ? `~${data.lived} yrs` : null;
     return {
         ghost,
         age: ghost ? (age ? `Lived ${age}` : 'Age unknown') : (age ? `${age} old` : 'Age unknown'),
-        born: born ? `Born ${fmtDay(born)}` : '',
+        born: born ? `Born ${fmtDay(born)}` : approx ? `Born ~${data.born}` : '',
         rip: ghost ? (passed ? `RIP ${fmtDay(passed)}` : 'RIP') : '',
+        note: data.note ?? '',
     };
 }
 
@@ -39,6 +43,9 @@ const GEO = {
     leg: box(0.1, 0.3, 0.1).translate(0, -0.15, 0), tail: box(0.07, 0.07, 0.5).translate(0, 0, -0.25),
     ear: new THREE.ConeGeometry(0.08, 0.15, 4), halo: new THREE.TorusGeometry(0.22, 0.045, 6, 18),
     blob: new THREE.CircleGeometry(0.42, 16).rotateX(-Math.PI / 2), yarn: new THREE.IcosahedronGeometry(0.2, 1),
+    pupil: box(0.025, 0.06, 0.01), mask: box(0.26, 0.2, 0.01), muzzle: box(0.18, 0.12, 0.04), blaze: box(0.07, 0.12, 0.02),
+    halfFace: box(0.2, 0.33, 0.33), chest: box(0.3, 0.22, 0.04), saddle: box(0.42, 0.18, 0.42), stripe: box(0.42, 0.03, 0.05),
+    paw: box(0.11, 0.08, 0.11),
 };
 const mats = new Map();
 const lambert = c => mats.get(c) ?? mats.set(c, new THREE.MeshLambertMaterial({ color: c, flatShading: true })).get(c);
@@ -52,15 +59,32 @@ function mesh(geo, mat, x, y, z, parent) {
     return m;
 }
 
-// Stand-in cat built from boxes (~150 tris), facing +Z, feet at y = 0.
-function standIn(color) {
-    const root = new THREE.Group(), fur = lambert(color), dark = lambert('#1a1714');
-    mesh(GEO.body, fur, 0, 0.45, 0, root);
+// Stand-in cat built from boxes (~300 tris), facing +Z, feet at y = 0. coat: see the siteData.cats comment in index.html.
+function standIn({ base = '#888', points, patch, face, white, stripes, eyes = '#c9c24a', long } = {}) {
+    const root = new THREE.Group(), fur = lambert(base), pt = lambert(points ?? base), wh = lambert('#f1ece0');
+    const body = mesh(GEO.body, fur, 0, 0.45, 0, root);
     const head = mesh(GEO.head, fur, 0, 0.7, 0.42, root);
-    for (const x of [-0.11, 0.11]) { mesh(GEO.ear, fur, x, 0.22, -0.02, head); mesh(GEO.eye, dark, x * 0.8, 0.03, 0.165, head); }
-    const tail = mesh(GEO.tail, fur, 0, 0.55, -0.34, root);
+    for (const x of [-0.11, 0.11]) {
+        mesh(GEO.ear, pt, x, 0.22, -0.02, head);
+        mesh(GEO.eye, lambert(eyes), x * 0.8, 0.03, 0.17, head);
+        mesh(GEO.pupil, lambert('#1a1714'), x * 0.8, 0.03, 0.18, head);
+    }
+    if (points) mesh(GEO.mask, pt, 0, 0, 0.163, head);
+    if (patch) {
+        mesh(GEO.saddle, lambert(patch), 0.03, 0.56, -0.12, root);
+        if (face === 'half') mesh(GEO.halfFace, lambert(patch), 0.095, 0.005, 0, head);
+        else mesh(GEO.blaze, lambert(patch), 0, 0.09, 0.165, head);
+    }
+    if (stripes) for (const z of [-0.22, -0.02, 0.18]) mesh(GEO.stripe, lambert(stripes), 0, 0.62, z, root);
+    if (white) { mesh(GEO.muzzle, wh, 0, -0.08, 0.17, head); mesh(GEO.chest, wh, 0, 0.38, 0.36, root); }
+    const tail = mesh(GEO.tail, pt, 0, 0.55, -0.34, root);
     tail.rotation.x = 0.8;
-    const legs = [[-0.13, 0.25], [0.13, -0.25], [0.13, 0.25], [-0.13, -0.25]].map(([x, z]) => mesh(GEO.leg, fur, x, 0.3, z, root));
+    const legs = [[-0.13, 0.25], [0.13, -0.25], [0.13, 0.25], [-0.13, -0.25]].map(([x, z]) => {
+        const leg = mesh(GEO.leg, pt, x, 0.3, z, root);
+        if (white) mesh(GEO.paw, wh, 0, -0.26, 0, leg);
+        return leg;
+    });
+    if (long) { body.scale.set(1.25, 1.2, 1.05); tail.scale.set(2.4, 2.4, 1); head.scale.setScalar(1.06); }
     return { root, head, tail, legs, halo: new THREE.Vector3(0, 1.12, 0.42), top: 1.0 };
 }
 
@@ -100,8 +124,9 @@ class Cat {
         else if (yarn.interest > 0) { this.state = 'chase'; this.target.copy(yarn.mesh.position); }
         else if (this.state === 'chase' || (this.state === 'walk' && Math.hypot(p.x - this.target.x, p.z - this.target.z) < 0.2)) this.rest();
         else if (this.state === 'idle' && this.timer <= 0) {
-            const a = rand(0, Math.PI * 2), r = Math.sqrt(Math.random()) * (YARD - 0.5);
-            this.target.set(Math.cos(a) * r, 0, Math.sin(a) * r);
+            const a = rand(0, Math.PI * 2), r = Math.sqrt(Math.random()) * (YARD - 0.5), b = this.buddy?.root.position;
+            if (b && Math.random() < 0.6) this.target.set(b.x + rand(-0.9, 0.9), 0, b.z + rand(-0.9, 0.9)).clampLength(0, YARD - 0.5);   // siblings hang out
+            else this.target.set(Math.cos(a) * r, 0, Math.sin(a) * r);
             this.state = 'walk';
         }
 
@@ -209,13 +234,14 @@ function buildRoster(roster, cats, onPick) {
         const info = describe(c);
         return `<button class="cat-roster-card mann-co-border bg-[#332c26] p-5 text-left w-full" data-i="${i}">
             <div class="flex items-center gap-3">
-                <span class="w-5 h-5 border-2 border-black flex-shrink-0" style="background:${esc(c.color || '#888')}"></span>
-                <h3 class="tf-font text-2xl text-white italic truncate">${esc(c.name)}</h3>
+                <span class="w-5 h-5 border-2 border-black flex-shrink-0" style="background:${esc(c.coat?.base || '#888')}"></span>
+                <h3 class="tf-font text-2xl text-white italic truncate pr-2">${esc(c.name)}</h3>
                 ${info.ghost ? '<i class="fa-solid fa-ring text-yellow-300 ml-auto" title="In memory"></i>' : ''}
             </div>
             <p class="text-slate-300 mt-2">${esc(info.age)}</p>
             ${info.born ? `<p class="text-slate-500 text-sm">${esc(info.born)}</p>` : ''}
             ${info.rip ? `<p class="tf-font text-orange-400 italic">${esc(info.rip)}</p>` : ''}
+            ${info.note ? `<p class="text-slate-400 text-sm italic">${esc(info.note)}</p>` : ''}
         </button>`;
     }).join('');
     roster.onclick = e => { const b = e.target.closest('[data-i]'); if (b) onPick(+b.dataset.i); };
@@ -244,9 +270,10 @@ async function build(host, roster, data) {
 
     const loader = new GLTFLoader();
     const rigs = await Promise.all(data.map(c => c.model
-        ? loadModel(loader, c.model).catch(err => { console.warn(`Cat model ${c.model} failed, using stand-in`, err); return standIn(c.color || '#888'); })
-        : standIn(c.color || '#888')));
+        ? loadModel(loader, c.model).catch(err => { console.warn(`Cat model ${c.model} failed, using stand-in`, err); return standIn(c.coat); })
+        : standIn(c.coat)));
     const cats = data.map((c, i) => new Cat(c, rigs[i], scene));
+    cats.forEach(c => c.buddy = cats.find(o => o !== c && o.data.name === c.data.buddy));
     const tags = cats.map(c => {
         const tag = Object.assign(document.createElement('div'), { className: `cat-tag${c.info.ghost ? ' ghost' : ''}` });
         tag.innerHTML = `<b>${esc(c.data.name)}</b><span><br>${esc(c.info.ghost ? c.info.rip : c.info.age)}</span>`;
@@ -268,7 +295,11 @@ async function build(host, roster, data) {
             tag.style.display = on ? '' : 'none';
             if (!on) return;
             if (!tag.w) { tag.w = tag.offsetWidth; tag.h = tag.offsetHeight; }
-            for (const r of placed) if (Math.abs(r.x - x) < (r.w + tag.w) / 2 && y > r.y - r.h && y - tag.h < r.y) y = r.y - r.h - 2;
+            x = THREE.MathUtils.clamp(x, tag.w / 2, host.clientWidth - tag.w / 2);
+            for (let moved = true; moved;) {
+                moved = false;
+                for (const r of placed) if (Math.abs(r.x - x) < (r.w + tag.w) / 2 && y > r.y - r.h && y - tag.h < r.y) { y = r.y - r.h - 2; moved = true; }
+            }
             placed.push({ x, y, w: tag.w, h: tag.h });
             tag.style.transform = `translate(${x}px, ${y}px) translate(-50%, -100%)`;
         });
@@ -279,7 +310,8 @@ async function build(host, roster, data) {
         cat.pet();
         card.innerHTML = `<b>${esc(cat.data.name)}</b>${cat.info.ghost ? ' <i class="fa-solid fa-ring text-yellow-300"></i>' : ''}<br>${esc(cat.info.age)}`
             + (cat.info.born ? `<br><span class="text-slate-400">${esc(cat.info.born)}</span>` : '')
-            + (cat.info.rip ? `<br><span class="text-orange-400">${esc(cat.info.rip)}</span>` : '');
+            + (cat.info.rip ? `<br><span class="text-orange-400">${esc(cat.info.rip)}</span>` : '')
+            + (cat.info.note ? `<br><span class="text-slate-400 italic">${esc(cat.info.note)}</span>` : '');
         card.style.display = 'block';
         roster.querySelectorAll('.cat-roster-card').forEach(b => b.classList.toggle('active', +b.dataset.i === i));
         const s = toScreen(cat, -0.5);   // hearts rise from the cat's back, beside its tag
