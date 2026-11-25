@@ -263,7 +263,7 @@ async function build(host, roster, data) {
     // Name tags follow their cat; a tag that would overlap a nearer cat's tag is lifted above it.
     function placeTags() {
         const placed = [];
-        cats.map((c, i) => ({ i, ...toScreen(c, 0.3) })).sort((a, b) => b.y - a.y).forEach(({ i, x, y, on }) => {
+        cats.map((c, i) => ({ i, ...toScreen(c, c.halo ? 0.65 : 0.3) })).sort((a, b) => b.y - a.y).forEach(({ i, x, y, on }) => {
             const tag = tags[i];
             tag.style.display = on ? '' : 'none';
             if (!on) return;
