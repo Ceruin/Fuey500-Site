@@ -296,7 +296,7 @@ async function build(host, roster, data) {
             tag.style.display = on ? '' : 'none';
             if (!on) return;
             if (!tag.w) { tag.w = tag.offsetWidth; tag.h = tag.offsetHeight; }
-            x = THREE.MathUtils.clamp(x, tag.w / 2, host.clientWidth - tag.w / 2);
+            x = THREE.MathUtils.clamp(x, tag.w / 2 + 6, host.clientWidth - tag.w / 2 - 6);   // clear of the stage border
             for (let moved = true; moved;) {
                 moved = false;
                 for (const r of placed) if (Math.abs(r.x - x) < (r.w + tag.w) / 2 && y > r.y - r.h && y - tag.h < r.y) { y = r.y - r.h - 2; moved = true; }
