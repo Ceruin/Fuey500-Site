@@ -3,9 +3,11 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { makeCat } from './catmodel.js';
 
 const YARD = 6.5;                 // radius cats stay inside
 const MODEL_DIR = 'cats/models/';
+const PHOTO_DIR = 'cats/photos/';
 const rand = (a, b) => a + Math.random() * (b - a);
 const esc = s => String(s).replace(/[&<>"]/g, c => `&#${c.charCodeAt(0)};`);
 
@@ -39,13 +41,8 @@ function describe(data) {
 // ---------- shared geometry and materials ----------
 const box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
 const GEO = {
-    body: box(0.4, 0.34, 0.72), head: box(0.38, 0.32, 0.32), eye: box(0.07, 0.07, 0.02),
-    leg: box(0.1, 0.3, 0.1).translate(0, -0.15, 0), tail: box(0.07, 0.07, 0.5).translate(0, 0, -0.25),
-    ear: new THREE.ConeGeometry(0.08, 0.15, 4), halo: new THREE.TorusGeometry(0.22, 0.045, 6, 18),
-    blob: new THREE.CircleGeometry(0.42, 16).rotateX(-Math.PI / 2), yarn: new THREE.IcosahedronGeometry(0.2, 1),
-    pupil: box(0.025, 0.06, 0.01), mask: box(0.26, 0.2, 0.01), muzzle: box(0.18, 0.12, 0.04), blaze: box(0.07, 0.12, 0.02),
-    halfFace: box(0.2, 0.33, 0.33), chest: box(0.3, 0.22, 0.04), saddle: box(0.42, 0.18, 0.42), stripe: box(0.42, 0.03, 0.05),
-    paw: box(0.11, 0.08, 0.11),
+    halo: new THREE.TorusGeometry(0.16, 0.035, 6, 18), blob: new THREE.CircleGeometry(0.42, 16).rotateX(-Math.PI / 2),
+    yarn: new THREE.IcosahedronGeometry(0.2, 1),
 };
 const mats = new Map();
 const lambert = c => mats.get(c) ?? mats.set(c, new THREE.MeshLambertMaterial({ color: c, flatShading: true })).get(c);
@@ -59,49 +56,21 @@ function mesh(geo, mat, x, y, z, parent) {
     return m;
 }
 
-// Stand-in cat built from boxes (~300 tris), facing +Z, feet at y = 0. coat: see the siteData.cats comment in index.html.
-function standIn({ base = '#888', points, patch, face, white, stripes, eyes = '#c9c24a', long } = {}) {
-    const root = new THREE.Group(), fur = lambert(base), pt = lambert(points ?? base), wh = lambert('#f1ece0');
-    const body = mesh(GEO.body, fur, 0, 0.45, 0, root);
-    const head = mesh(GEO.head, fur, 0, 0.7, 0.42, root);
-    for (const x of [-0.11, 0.11]) {
-        mesh(GEO.ear, pt, x, 0.22, -0.02, head);
-        mesh(GEO.eye, lambert(eyes), x * 0.8, 0.03, 0.17, head);
-        mesh(GEO.pupil, lambert('#1a1714'), x * 0.8, 0.03, 0.18, head);
-    }
-    if (points) mesh(GEO.mask, pt, 0, 0, 0.163, head);
-    if (patch) {
-        mesh(GEO.saddle, lambert(patch), 0.03, 0.56, -0.12, root);
-        if (face === 'half') mesh(GEO.halfFace, lambert(patch), 0.095, 0.005, 0, head);
-        else mesh(GEO.blaze, lambert(patch), 0, 0.09, 0.165, head);
-    }
-    if (stripes) for (const z of [-0.22, -0.02, 0.18]) mesh(GEO.stripe, lambert(stripes), 0, 0.62, z, root);
-    if (white) { mesh(GEO.muzzle, wh, 0, -0.08, 0.17, head); mesh(GEO.chest, wh, 0, 0.38, 0.36, root); }
-    const tail = mesh(GEO.tail, pt, 0, 0.55, -0.34, root);
-    tail.rotation.x = 0.8;
-    const legs = [[-0.13, 0.25], [0.13, -0.25], [0.13, 0.25], [-0.13, -0.25]].map(([x, z]) => {
-        const leg = mesh(GEO.leg, pt, x, 0.3, z, root);
-        if (white) mesh(GEO.paw, wh, 0, -0.26, 0, leg);
-        return leg;
-    });
-    if (long) { body.scale.set(1.25, 1.2, 1.05); tail.scale.set(2.4, 2.4, 1); head.scale.setScalar(1.06); }
-    return { root, head, tail, legs, halo: new THREE.Vector3(0, 1.12, 0.42), top: 1.0 };
-}
-
-// A real model: scaled to stand-in height, feet on the ground. Clips named idle/walk/pet play if present.
+// A hand-made model: scaled to the procedural cat's height, feet on the ground. Clips named idle/walk/pet/sit/lie play if present.
 async function loadModel(loader, file) {
     const gltf = await loader.loadAsync(MODEL_DIR + file), model = gltf.scene;
-    model.scale.multiplyScalar(0.95 / new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3()).y);
+    model.scale.multiplyScalar(0.82 / new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3()).y);
     model.position.y -= new THREE.Box3().setFromObject(model).min.y;
     const root = new THREE.Group().add(model), mixer = new THREE.AnimationMixer(model);
     const actions = Object.fromEntries(gltf.animations.map(c => [c.name.toLowerCase(), mixer.clipAction(c)]));
-    return { root, model, mixer, actions, halo: new THREE.Vector3(0, 1.1, 0), top: 0.95 };
+    return { root, model, mixer, actions, halo: new THREE.Vector3(0, 1.0, 0), top: 0.82 };
 }
 
 // ---------- cat ----------
 class Cat {
     constructor(data, rig, scene) {
-        Object.assign(this, { data, rig, info: describe(data), state: 'idle', timer: rand(0.5, 3), speed: 0, stride: 0, phase: rand(0, 9) });
+        Object.assign(this, { data, rig, info: describe(data), state: 'idle', mode: 'stand', timer: rand(0.5, 3), speed: 0, stride: 0, phase: rand(0, 9) });
+        if (Math.random() < 0.6) this.mode = Math.random() < 0.5 ? 'sit' : 'lie';
         this.target = new THREE.Vector3();
         this.root = rig.root;
         this.root.position.set(rand(-4, 4), 0, rand(-4, 4));
@@ -109,7 +78,7 @@ class Cat {
         this.root.traverse(o => o.userData.cat = this);
         this.blob = mesh(GEO.blob, BLOB, 0, 0.01, 0, scene);
         if (this.info.ghost) {
-            this.halo = mesh(GEO.halo, HALO, rig.halo.x, rig.halo.y, rig.halo.z, this.root);
+            this.halo = mesh(GEO.halo, HALO, rig.halo.x, rig.halo.y, rig.halo.z, rig.haloParent ?? this.root);
             this.halo.rotation.x = Math.PI / 2;
         }
         scene.add(this.root);
@@ -123,6 +92,7 @@ class Cat {
         if (this.state === 'pet') { if (this.timer <= 0) this.rest(); }
         else if (yarn.interest > 0) { this.state = 'chase'; this.target.copy(yarn.mesh.position); }
         else if (this.state === 'chase' || (this.state === 'walk' && Math.hypot(p.x - this.target.x, p.z - this.target.z) < 0.2)) this.rest();
+        else if (this.state === 'idle' && this.timer <= 0 && this.mode !== 'stand') { this.mode = 'stand'; this.timer = 0.8; }   // get up first
         else if (this.state === 'idle' && this.timer <= 0) {
             const a = rand(0, Math.PI * 2), r = Math.sqrt(Math.random()) * (YARD - 0.5), b = this.buddy?.root.position;
             if (b && Math.random() < 0.6) this.target.set(b.x + rand(-0.9, 0.9), 0, b.z + rand(-0.9, 0.9)).clampLength(0, YARD - 0.5);   // siblings hang out
@@ -144,7 +114,13 @@ class Cat {
         this.blob.position.set(p.x, 0.01, p.z);
     }
 
-    rest() { this.state = 'idle'; this.timer = rand(2, 6); }
+    // Settle down: stand and look around, sit, or lie down for a while.
+    rest() {
+        const r = Math.random();
+        this.state = 'idle';
+        this.mode = r < 0.35 ? 'stand' : r < 0.7 ? 'sit' : 'lie';
+        this.timer = this.mode === 'lie' ? rand(6, 14) : this.mode === 'sit' ? rand(4, 9) : rand(2, 5);
+    }
 
     turnTo(want, dt) {
         const r = this.root.rotation, diff = Math.atan2(Math.sin(want - r.y), Math.cos(want - r.y));
@@ -154,17 +130,14 @@ class Cat {
     animate(dt, t) {
         const r = this.rig, petting = this.state === 'pet', s = this.speed;
         this.stride += s * dt * 9;
-        const swing = Math.sin(this.stride) * Math.min(s, 1) * 0.7;
-        this.root.position.y = this.info.ghost ? 0.25 + Math.sin(t * 1.5 + this.phase) * 0.07 : Math.abs(Math.sin(this.stride)) * 0.03 * Math.min(s, 1);
-        this.root.scale.y = petting ? 1 + Math.sin(t * 12) * 0.04 : 1;
+        this.root.position.y = this.info.ghost ? 0.25 + Math.sin(t * 1.5 + this.phase) * 0.07 : 0;
         if (this.halo) this.halo.rotation.z = t * 0.8;
-        if (r.legs) {
-            r.legs.forEach((leg, i) => leg.rotation.x = i < 2 ? swing : -swing);
-            r.tail.rotation.z = Math.sin(t * (petting ? 9 : 2) + this.phase) * 0.35;
-            r.head.rotation.set(petting ? -0.15 : 0, this.state === 'idle' ? Math.sin(t * 0.6 + this.phase) * 0.4 : 0, petting ? Math.sin(t * 3) * 0.2 : 0);
+        if (r.update) {
+            const mode = petting ? 'sit' : this.state === 'idle' ? this.mode : this.state;
+            r.update(dt, t, { mode, speed: s, stride: this.stride, pet: petting, look: this.state === 'idle' ? Math.sin(t * 0.6 + this.phase) * 0.5 : 0 });
             return;
         }
-        const clip = r.actions[petting ? 'pet' : s > 0.1 ? 'walk' : 'idle'] ?? r.actions.idle;
+        const clip = r.actions[petting ? 'pet' : s > 0.1 ? 'walk' : this.mode] ?? r.actions.idle;
         if (clip && clip !== this.clip) { this.clip?.fadeOut(0.25); clip.reset().fadeIn(0.25).play(); this.clip = clip; }
         if (clip) r.mixer.update(dt);
         else r.model.position.y = Math.abs(Math.sin(this.stride)) * 0.04 + (petting ? Math.sin(t * 12) * 0.02 : 0);
@@ -235,8 +208,8 @@ function buildRoster(roster, cats, onPick) {
         return `<button class="cat-roster-card mann-co-border bg-[#332c26] p-5 text-left w-full" data-i="${i}">
             <div class="flex items-center gap-3">
                 <span class="w-5 h-5 border-2 border-black flex-shrink-0" style="background:${esc(c.coat?.base || '#888')}"></span>
-                <h3 class="tf-font text-2xl text-white italic truncate pr-2">${esc(c.name)}</h3>
-                ${info.ghost ? '<i class="fa-solid fa-ring text-yellow-300 ml-auto" title="In memory"></i>' : ''}
+                <h3 class="tf-font text-2xl text-white italic min-w-0 break-words pr-2">${esc(c.name)}</h3>
+                <span class="ml-auto flex gap-2 text-slate-400">${info.ghost ? '<i class="fa-solid fa-ring text-yellow-300" title="In memory"></i>' : ''}${c.photo ? '<i class="fa-solid fa-camera" title="Photo"></i>' : ''}</span>
             </div>
             <p class="text-slate-300 mt-2">${esc(info.age)}</p>
             ${info.born ? `<p class="text-slate-500 text-sm">${esc(info.born)}</p>` : ''}
@@ -244,7 +217,35 @@ function buildRoster(roster, cats, onPick) {
             ${info.note ? `<p class="text-slate-400 text-sm italic">${esc(info.note)}</p>` : ''}
         </button>`;
     }).join('');
-    roster.onclick = e => { const b = e.target.closest('[data-i]'); if (b) onPick(+b.dataset.i); };
+    roster.onclick = e => {
+        const b = e.target.closest('[data-i]');
+        if (!b) return;
+        onPick(+b.dataset.i);
+        showPhoto(cats[+b.dataset.i], b);
+    };
+}
+
+// Medium popup with the cat's photo; closes on the X, the backdrop or Escape and hands focus back.
+let photoBox = null;
+function showPhoto(c, from) {
+    if (!c.photo) return;
+    if (!photoBox) {
+        photoBox = Object.assign(document.createElement('div'), { className: 'cat-photo' });
+        photoBox.innerHTML = `<figure class="mann-co-border" role="dialog" aria-modal="true" aria-label="Cat photo">
+            <button class="cat-photo-x" aria-label="Close photo"><i class="fa-solid fa-xmark"></i></button>
+            <img alt=""><figcaption></figcaption></figure>`;
+        const close = () => { photoBox.classList.remove('open'); photoBox.from?.focus(); };
+        photoBox.onclick = e => { if (e.target === photoBox || e.target.closest('.cat-photo-x')) close(); };
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && photoBox.classList.contains('open')) close(); });
+        document.body.append(photoBox);
+    }
+    const info = describe(c), img = photoBox.querySelector('img');
+    img.src = PHOTO_DIR + c.photo;
+    img.alt = `Photo of ${c.name}`;
+    photoBox.querySelector('figcaption').innerHTML = `<b>${esc(c.name)}</b>${info.ghost ? ' <i class="fa-solid fa-ring text-yellow-300"></i>' : ''} <span>${esc(info.ghost ? `${info.age} · ${info.rip}` : info.age)}</span>`;
+    photoBox.from = from;
+    photoBox.classList.add('open');
+    photoBox.querySelector('.cat-photo-x').focus();
 }
 
 async function build(host, roster, data) {
@@ -270,13 +271,13 @@ async function build(host, roster, data) {
 
     const loader = new GLTFLoader();
     const rigs = await Promise.all(data.map(c => c.model
-        ? loadModel(loader, c.model).catch(err => { console.warn(`Cat model ${c.model} failed, using stand-in`, err); return standIn(c.coat); })
-        : standIn(c.coat)));
+        ? loadModel(loader, c.model).catch(err => { console.warn(`Cat model ${c.model} failed, using stand-in`, err); return makeCat(c.coat); })
+        : makeCat(c.coat)));
     const cats = data.map((c, i) => new Cat(c, rigs[i], scene));
     cats.forEach(c => c.buddy = cats.find(o => o !== c && o.data.name === c.data.buddy));
     const tags = cats.map(c => {
         const tag = Object.assign(document.createElement('div'), { className: `cat-tag${c.info.ghost ? ' ghost' : ''}` });
-        tag.innerHTML = `<b>${esc(c.data.name)}</b><span><br>${esc(c.info.ghost ? c.info.rip : c.info.age)}</span>`;
+        tag.innerHTML = `<b>${esc(c.data.name)}</b>${c.info.ghost ? ' <i class="fa-solid fa-ring text-yellow-300"></i>' : ''}<span><br>${esc(c.info.ghost ? c.info.rip : c.info.age)}</span>`;
         layer.append(tag);
         return tag;
     });

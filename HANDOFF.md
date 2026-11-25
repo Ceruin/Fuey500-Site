@@ -11,21 +11,26 @@ yarn for them, see each cat's age; cats that have passed wear a halo and show th
 
 - Branch `claude/project-thread-ucqvs7`, PR #1 open against `main`. Not merged: `main` is what GitHub
   Pages serves at fuey500.com, so merging is Chance's call.
-- Chance's 8 cats are in (`siteData.cats`): Shadow ~13, Piccolo (passed, lived ~2-3), Kael'thas ~2,
-  Booster ~8 (Chance's mom's cat), Mischief ~3, Sticks ~1 and Stone ~1 (siblings, `buddy` keeps them near
-  each other), Jinx (passed, lived ~8). Ages are approximate birth years; the two RIP dates are unknown.
-  Stand-in coats were matched to Chance's photos (the photos are not in the repo).
-- Tested in headless Chrome (SwiftShader) with the CDN scripts served locally: 160 draw calls /
-  ~2.8k tris with 8 cats, petting shows hearts + info card + roster highlight, yarn toss makes cats
-  chase and bat it, cats lose interest after ~6 bats, loop stops when leaving the tab and resumes,
-  Blog tab unchanged, roster ages correct. Not tested on a real phone or on the live CDN URLs.
+- 8 cats in `siteData.cats`: Shadow ~13, Piccolo (passed, lived ~2-3), Kael'thas ~2, Booster ~8 (note
+  "Mom's cat"), Mischief ~3, Sticks ~1 and Stone ~1 (siblings, `buddy`), Jinx (passed, lived ~8, note
+  "Brother's cat"). Chance's rule: no family members' names anywhere on the site. RIP dates unknown.
+- Cats are procedural low-poly models (`cats/catmodel.js`, ~680 tris each) with coats matched to
+  Chance's photos, posing stand/walk/chase/sit/lie; petting makes a cat sit and purr.
+- Photos are in `cats/photos/` (900px JPEGs, metadata stripped); a roster card click opens a popup.
+- Preview page (Claude artifact) is built from the repo by a scratch script that inlines
+  `catmodel.js` + `playground.js` and the cat data; photos are published beside it.
+- Tested in headless Chrome (SwiftShader) with CDN scripts served locally: 146 draw calls / ~6.9k
+  tris with 8 cats, pet/yarn/chase/stop/resume work, tags don't overlap, popup opens and closes on
+  Escape at desktop and 390px width. 3 blind review rounds of a contact sheet against the photos.
+  Not tested on a real phone or on the live CDN URLs.
 
 ## Files
 
 - `index.html`: import map for three.js 0.170.0 (jsDelivr), `Cats` nav button, `#cats` section,
   Cat Playground CSS, `siteData.cats`, `showCats()` lazy loader hooked into the nav click.
-- `cats/playground.js`: the whole playground (scene, stand-in cats, GLB loading, behaviour, yarn,
-  tags, roster). Exports `start`, `stop`, `ageText`, `debug`.
+- `cats/playground.js`: the playground (scene, GLB loading, behaviour, yarn, tags, roster, photo popup).
+- `cats/catmodel.js`: procedural low-poly cat (geometry, coat painting, joints, poses).
+- `cats/photos/`: one photo per cat. Exports `start`, `stop`, `ageText`, `debug`.
 - `cats/models/`: where real `.glb` cats go (empty for now).
 - `PLAN.md`, `HANDOFF.md`.
 
@@ -35,8 +40,8 @@ yarn for them, see each cat's age; cats that have passed wear a halo and show th
 - Cat data sits in `siteData.cats` so the admin panel's JSON dump includes it.
 - `passed: null` = alive, `"YYYY-MM-DD"` = RIP date, `""` = passed, date unknown. `born: null` shows "Age unknown".
 - Deceased cats keep playing, float a little, wear a gold halo.
-- Stand-in markings are a few extra boxes per cat from `coat`, no textures.
-- Phones: pixel ratio cap 1.5, no shadow maps (blob decals), tags show the name only under 640px.
+- Markings are painted per face from `coat` (vertex colours, no textures); one shared material.
+- Phones: pixel ratio cap 1.5, ~680 tris per cat, no shadow maps (blob decals), tags show the name only under 640px.
 
 ## Next steps
 

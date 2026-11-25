@@ -149,6 +149,16 @@
         .cat-roster-card { transition: transform 0.15s ease-in-out; }
         .cat-roster-card:hover { transform: translateY(-2px); }
         .cat-roster-card.active { outline: 3px solid var(--tf-orange); }
+        .cat-photo { position: fixed; inset: 0; z-index: 100; display: none; align-items: center; justify-content: center; padding: 24px 16px;
+                     background: rgba(10, 8, 6, 0.8); }
+        .cat-photo.open { display: flex; }
+        .cat-photo figure { position: relative; margin: 0; padding: 10px; background: var(--tf-black); max-width: min(92vw, 560px); }
+        .cat-photo img { display: block; max-width: 100%; max-height: 58vh; margin: 0 auto; }
+        .cat-photo figcaption { padding: 8px 4px 2px; color: var(--tf-tan); font-size: 15px; }
+        .cat-photo figcaption b { color: white; font-style: italic; text-transform: uppercase; font-size: 20px; }
+        .cat-photo-x { position: absolute; top: -14px; right: -14px; width: 36px; height: 36px; font-size: 18px; color: white;
+                       background: var(--tf-orange); border: 3px solid var(--tf-black); }
+        .cat-photo-x:focus-visible { outline: 2px solid white; outline-offset: 2px; }
 
         /* High-impact white italic with orange drop shadow */
         .tf-header-style {
@@ -346,24 +356,24 @@
             ],
             // born: "YYYY-MM-DD", or "YYYY" for an approximate age. passed: null if alive, "YYYY-MM-DD", or "" if the date
             // is unknown; lived: age at passing when there are no dates. coat: base, points (siamese), patch (+ face: "half"),
-            // stripes, white (chest/paws/muzzle), eyes, long (longhair). model: a .glb in cats/models/, or null.
+            // stripes, white (chest/paws/muzzle), whiteLegs, eyes, nose, long (longhair). photo: a file in cats/photos/. model: a .glb in cats/models/, or null.
             "cats": [
-                { "name": "Shadow", "born": "2013", "passed": null, "model": null,
-                  "coat": { "base": "#5d6168", "patch": "#e0b48a", "white": true, "eyes": "#b8b04a" } },
-                { "name": "Piccolo", "born": null, "passed": "", "lived": "2-3", "model": null,
+                { "name": "Shadow", "photo": "shadow.jpg", "born": "2013", "passed": null, "model": null,
+                  "coat": { "base": "#6b6e74", "patch": "#d6ad8c", "white": true, "whiteLegs": true, "eyes": "#b8b04a" } },
+                { "name": "Piccolo", "photo": "piccolo.jpg", "born": null, "passed": "", "lived": "2-3", "model": null,
                   "coat": { "base": "#1f1c1d", "eyes": "#c8d05a", "long": true } },
-                { "name": "Kael'thas", "born": "2024", "passed": null, "model": null,
-                  "coat": { "base": "#a08f7c", "points": "#3b302a", "white": true, "eyes": "#7fb3d9" } },
-                { "name": "Booster", "born": "2018", "passed": null, "note": "Mom's cat", "model": null,
-                  "coat": { "base": "#7c7f86", "eyes": "#c9a640" } },
-                { "name": "Mischief", "born": "2023", "passed": null, "model": null,
-                  "coat": { "base": "#4f5156", "white": true, "eyes": "#c8c060" } },
-                { "name": "Sticks", "born": "2025", "passed": null, "note": "Stone's sibling", "buddy": "Stone", "model": null,
-                  "coat": { "base": "#8a8279", "stripes": "#4d4741", "white": true, "eyes": "#a7a35a" } },
-                { "name": "Stone", "born": "2025", "passed": null, "note": "Sticks' sibling", "buddy": "Sticks", "model": null,
-                  "coat": { "base": "#56606c", "eyes": "#d1a83a" } },
-                { "name": "Jinx", "born": null, "passed": "", "lived": "8", "model": null,
-                  "coat": { "base": "#56565a", "patch": "#c98a54", "face": "half", "white": true, "eyes": "#8fb07a" } }
+                { "name": "Kael'thas", "photo": "kaelthas.jpg", "born": "2024", "passed": null, "model": null,
+                  "coat": { "base": "#9a9189", "points": "#45434a", "white": true, "eyes": "#7fb3d9" } },
+                { "name": "Booster", "photo": "booster.jpg", "born": "2018", "passed": null, "note": "Mom's cat", "model": null,
+                  "coat": { "base": "#7a8089", "eyes": "#c9a640" } },
+                { "name": "Mischief", "photo": "mischief.jpg", "born": "2023", "passed": null, "model": null,
+                  "coat": { "base": "#2b2a2d", "white": true, "eyes": "#c8c060" } },
+                { "name": "Sticks", "photo": "sticks.jpg", "born": "2025", "passed": null, "note": "Stone's sibling", "buddy": "Stone", "model": null,
+                  "coat": { "base": "#857e76", "stripes": "#4d4741", "white": true, "eyes": "#a7a35a" } },
+                { "name": "Stone", "photo": "stone.jpg", "born": "2025", "passed": null, "note": "Sticks' sibling", "buddy": "Sticks", "model": null,
+                  "coat": { "base": "#5a6069", "eyes": "#d1a83a" } },
+                { "name": "Jinx", "photo": "jinx.jpg", "born": null, "passed": "", "lived": "8", "note": "Brother's cat", "model": null,
+                  "coat": { "base": "#2f2724", "patch": "#c47a3e", "face": "half", "white": true, "eyes": "#8fb07a" } }
             ]
         };
 
