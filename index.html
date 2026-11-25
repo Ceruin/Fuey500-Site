@@ -7,6 +7,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
+    <script type="importmap">{ "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    } }</script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Oswald:wght@400;700&display=swap');
         
@@ -123,6 +127,39 @@
         ::-webkit-scrollbar-track { background: var(--tf-black); }
         ::-webkit-scrollbar-thumb { background: var(--tf-orange); border: 2px solid var(--tf-black); }
         
+        /* Cat Playground */
+        .cat-stage { position: relative; height: min(70vh, 560px); overflow: hidden; cursor: pointer;
+                      background: linear-gradient(var(--tf-blu), var(--tf-dark) 55%); }
+        .cat-stage canvas { display: block; width: 100%; height: 100%; }
+        .cat-layer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+        .cat-tag { position: absolute; left: 0; top: 0; white-space: nowrap; text-align: center; font-size: 13px; line-height: 1.2;
+                   color: var(--tf-tan); background: rgba(26,23,20,0.75); border: 2px solid var(--tf-black); padding: 2px 8px; }
+        .cat-tag b { color: white; font-style: italic; text-transform: uppercase; }
+        .cat-tag.ghost { color: var(--tf-orange); }
+        @media (max-width: 640px) { .cat-stage { height: 420px; } .cat-tag { font-size: 11px; } .cat-tag span { display: none; } }
+        .cat-card { display: none; position: absolute; left: 12px; top: 12px; font-size: 14px; line-height: 1.4; color: var(--tf-tan);
+                    background: var(--tf-black); border-left: 4px solid var(--tf-orange); padding: 8px 14px; }
+        .cat-card b { color: white; font-style: italic; text-transform: uppercase; font-size: 18px; }
+        .cat-heart { position: absolute; left: 0; top: 0; z-index: 2; color: var(--tf-red); font-size: 26px; opacity: 0; text-shadow: 0 0 3px #000;
+                     animation: cat-heart 1.2s ease-out forwards; }
+        @keyframes cat-heart {
+            from { opacity: 1; transform: translate(var(--x), var(--y)) translate(-50%, -100%) scale(0.6); }
+            to { opacity: 0; transform: translate(var(--x), calc(var(--y) - 70px)) translate(-50%, -100%) scale(1.2); }
+        }
+        .cat-roster-card { transition: transform 0.15s ease-in-out; }
+        .cat-roster-card:hover { transform: translateY(-2px); }
+        .cat-roster-card.active { outline: 3px solid var(--tf-orange); }
+        .cat-photo { position: fixed; inset: 0; z-index: 100; display: none; align-items: center; justify-content: center; padding: 24px 16px;
+                     background: rgba(10, 8, 6, 0.8); }
+        .cat-photo.open { display: flex; }
+        .cat-photo figure { position: relative; margin: 0; padding: 10px; background: var(--tf-black); max-width: min(92vw, 560px); }
+        .cat-photo img { display: block; max-width: 100%; max-height: 58vh; margin: 0 auto; }
+        .cat-photo figcaption { padding: 8px 4px 2px; color: var(--tf-tan); font-size: 15px; }
+        .cat-photo figcaption b { color: white; font-style: italic; text-transform: uppercase; font-size: 20px; }
+        .cat-photo-x { position: absolute; top: -14px; right: -14px; width: 36px; height: 36px; font-size: 18px; color: white;
+                       background: var(--tf-orange); border: 3px solid var(--tf-black); }
+        .cat-photo-x:focus-visible { outline: 2px solid white; outline-offset: 2px; }
+
         /* High-impact white italic with orange drop shadow */
         .tf-header-style {
             text-shadow: 3px 3px 0px rgba(239,110,20,1);
@@ -142,6 +179,7 @@
                     <button class="nav-btn active px-6 h-full tf-font italic text-2xl" data-target="logs">Blog</button>
                     <button class="nav-btn px-6 h-full tf-font italic text-2xl" data-target="videos">Videos</button>
                     <button class="nav-btn px-6 h-full tf-font italic text-2xl" data-target="comics">Comics</button>
+                    <button class="nav-btn px-6 h-full tf-font italic text-2xl" data-target="cats">Cats</button>
                 </div>
 
                 <div class="relative ml-2">
@@ -159,6 +197,14 @@
         </section>
         <section id="comics" class="tab-content">
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8" id="comicGrid"></div>
+        </section>
+        <section id="cats" class="tab-content max-w-5xl mx-auto">
+            <div class="flex flex-wrap items-end justify-between gap-2 mb-4">
+                <h2 class="tf-font text-4xl text-white italic border-l-8 border-orange-600 pl-4">Cat Playground</h2>
+                <p class="text-slate-300 italic text-sm">Tap a cat to pet it. Tap the grass to toss the yarn. Drag to look around.</p>
+            </div>
+            <div id="catStage" class="cat-stage mann-co-border"></div>
+            <div id="catRoster" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-8"></div>
         </section>
     </main>
 
@@ -307,6 +353,27 @@
             "comics": [
                 { "title": "2", "img": "2.png" },
                 { "title": "1", "img": "1.png" }
+            ],
+            // born: "YYYY-MM-DD", or "YYYY" for an approximate age. passed: null if alive, "YYYY-MM-DD", or "" if the date
+            // is unknown; lived: age at passing when there are no dates. coat: base, points (siamese), patch (+ face: "half"),
+            // stripes, white (chest/paws/muzzle), whiteLegs, eyes, nose, long (longhair). photo: a file in cats/photos/. model: a .glb in cats/models/, or null.
+            "cats": [
+                { "name": "Shadow", "photo": "shadow.jpg", "born": "2013", "passed": null, "model": null,
+                  "coat": { "base": "#6b6e74", "patch": "#d6ad8c", "white": true, "whiteLegs": true, "eyes": "#b8b04a" } },
+                { "name": "Piccolo", "photo": "piccolo.jpg", "born": null, "passed": "", "lived": "2-3", "model": null,
+                  "coat": { "base": "#1f1c1d", "eyes": "#c8d05a", "long": true } },
+                { "name": "Kael'thas", "photo": "kaelthas.jpg", "born": "2024", "passed": null, "model": null,
+                  "coat": { "base": "#9a9189", "points": "#45434a", "white": true, "eyes": "#7fb3d9" } },
+                { "name": "Booster", "photo": "booster.jpg", "born": "2018", "passed": null, "note": "Mom's cat", "model": null,
+                  "coat": { "base": "#7a8089", "eyes": "#c9a640" } },
+                { "name": "Mischief", "photo": "mischief.jpg", "born": "2023", "passed": null, "model": null,
+                  "coat": { "base": "#2b2a2d", "white": true, "eyes": "#c8c060" } },
+                { "name": "Sticks", "photo": "sticks.jpg", "born": "2025", "passed": null, "note": "Stone's sibling", "buddy": "Stone", "model": null,
+                  "coat": { "base": "#857e76", "stripes": "#4d4741", "white": true, "eyes": "#a7a35a" } },
+                { "name": "Stone", "photo": "stone.jpg", "born": "2025", "passed": null, "note": "Sticks' sibling", "buddy": "Sticks", "model": null,
+                  "coat": { "base": "#5a6069", "eyes": "#d1a83a" } },
+                { "name": "Jinx", "photo": "jinx.jpg", "born": null, "passed": "", "lived": "8", "note": "Brother's cat", "model": null,
+                  "coat": { "base": "#2f2724", "patch": "#c47a3e", "face": "half", "white": true, "eyes": "#8fb07a" } }
             ]
         };
 
@@ -322,6 +389,7 @@
                 $(this).addClass('active');
                 $('.tab-content').hide();
                 $('#' + $(this).data('target')).fadeIn(250);
+                showCats($(this).data('target') === 'cats');
             });
 
             $('#entryType').on('change', function() {
@@ -341,6 +409,13 @@
                 if (e.ctrlKey && e.key === 'm') toggleAdmin();
             });
         });
+
+        let catPlayground = null;
+        async function showCats(on) {
+            if (!on) return catPlayground?.stop();
+            catPlayground ??= await import('./cats/playground.js');
+            catPlayground.start(document.getElementById('catStage'), document.getElementById('catRoster'), siteData.cats);
+        }
 
         function getMonthName(m) {
             const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
